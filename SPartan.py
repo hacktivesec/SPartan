@@ -45,6 +45,13 @@ foundURLs = []
 counter = 0
 dirs = []
 filename = ''
+authed = False
+ignore_ssl = False
+
+PROXY = {
+    'http' : ''
+}
+
 # downloadFiles = False
 RED = "\033[00;31m{0}\033[00m"
 GREEN = "\033[00;32m{0}\033[00m"
@@ -356,10 +363,11 @@ def authenticate(url, userpass, cString):
 
         if userpass is not None:
             #use credentials
-            username = userpass.split(':')[0]
+            domain = userpass.split('\\')[0]
+            username = domain + "\\" + userpass.split(':')[0]
             password = userpass.split(':')[1]
             print ('[+] Authenticating: %s %s' % (url, username))
-            response = requests.get(url, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers)
+            response = requests.get(url, auth=HttpNtlmAuth( username, password), verify=ignore_ssl,headers=headers,proxies=PROXY)
             if response.status_code == 200:
                 print ('[+] Authenticated...Have fun!: %s' % (response.status_code))
                 authed = True
@@ -399,11 +407,11 @@ def crawler(url):
 
             if authed:
                 if cookie is not None:
-                    response = requests.get(qURL, cookies=cookie, verify=ignore_ssl,headers=headers)
+                    response = requests.get(qURL, cookies=cookie, verify=ignore_ssl,headers=headers,proxies=PROXY)
                 else:
-                    response = requests.get(qURL, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers)
+                    response = requests.get(qURL, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers,proxies=PROXY)
             else:
-                response = requests.get(qURL, verify=ignore_ssl,headers=headers)
+                response = requests.get(qURL, verify=ignore_ssl,headers=headers,proxies=PROXY)
             soup = bs4.BeautifulSoup(response.text)
             for link in soup.find_all('a'):
                 hLink = link.get('href')
@@ -441,10 +449,9 @@ def keywordScanner(keyword):
         print(e)
 
 def fileNamer(url):
-    fileName = url.strip('https://').strip('http://').strip('/')
+    fileName = url.strip('https://').strip('http://')
     fileName = fileName.replace(":","")
-    if '/' in fileName:
-        return fileName.split('/')[0]
+    fileName = fileName.replace("/","_")
     return fileName
 
 def checkDirExists(fileName):
@@ -526,14 +533,17 @@ class URLThread(threading.Thread):
                 fakeRespSize = 0
                 respSize = 0
 
-                if authed:
-                    if cookie is not None:
-                        fakeResp = requests.get(fakeUrl, cookies=cookie, verify=ignore_ssl,headers=headers)
-                    else:
-                        fakeResp = requests.get(fakeUrl, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers)
-                else:
-                    fakeResp = requests.get(fakeUrl, verify=ignore_ssl,headers=headers)
+                
 
+                if authed:
+
+                    if cookie is not None:
+                        fakeResp = requests.get(fakeUrl, cookies=cookie, verify=ignore_ssl,headers=headers,proxies=PROXY)
+                    else:
+                        fakeResp = requests.get(fakeUrl, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers,proxies=PROXY)
+                else:
+                    fakeResp = requests.get(fakeUrl, verify=ignore_ssl,headers=headers,proxies=PROXY)
+                
                 fakeRespSize = len(fakeResp.text)
 
             except requests.HTTPError as e:
@@ -592,11 +602,11 @@ class URLThread(threading.Thread):
         try:
             if authed:
                 if cookie is not None:
-                    self.resp = requests.post(url, cookies=cookie, data=data, headers=headers, verify=ignore_ssl)
+                    self.resp = requests.post(url, cookies=cookie, data=data, headers=headers, verify=ignore_ssl,proxies=PROXY)
                 else:
-                    self.resp = requests.post(url, auth=HttpNtlmAuth(username, password), data=data, headers=headers, verify=ignore_ssl)
+                    self.resp = requests.post(url, auth=HttpNtlmAuth(username, password), data=data, headers=headers, verify=ignore_ssl,proxies=PROXY)
             else:
-                self.resp = requests.post(url, data=data, headers=headers, verify=ignore_ssl)
+                self.resp = requests.post(url, data=data, headers=headers, verify=ignore_ssl,proxies=PROXY)
             respSize = len(self.resp.text)
 
             if self.resp is not None:
@@ -636,9 +646,9 @@ class URLThread(threading.Thread):
 
             if authed:
                 if cookie is not None:
-                    self.resp = requests.get(url, cookies=cookie, stream=True, verify=ignore_ssl,headers=headers)
+                    self.resp = requests.get(url, cookies=cookie, stream=True, verify=ignore_ssl,headers=headers,proxies=PROXY)
                 else:
-                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), stream=True, verify=ignore_ssl,headers=headers)
+                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), stream=True, verify=ignore_ssl,headers=headers,proxies=PROXY)
             else:
                 self.resp = requests.get(url, stream=True,headers=headers)
 
@@ -683,7 +693,7 @@ def banner():
        ░               ░  ░  ░                  ░  ░        ░
                Sharepoint & Frontpage Scanner
 """
-    print (red.format(banner))
+    #print (red.format(banner))
 
 
 if __name__ == "__main__":
@@ -750,20 +760,24 @@ if __name__ == "__main__":
             else:
                 print ('Verbosity is set to LOW. SPartan will only print available resources. Use the -v flag to print all other resources found.')
 
-            global ignore_ssl
+            
             ignore_ssl = False
+
             if args.ignore_ssl:
                 ignore_ssl = True
-
+            #print('here')
             url = args.url.strip('/')
+            print(url)
             fileName = fileNamer(url)
+
+            print(filename)
 
             if not checkDirExists(fileName):
                 os.makedirs(fileName)
 
             if checkFileExists(fileName):
                 print ("A file named %s already exists. Do you want to restore this session? [y/n]" % fileName)
-                choice = raw_input().lower()
+                choice = input().lower()
                 if choice != 'y' and choice != 'n':
                     printer('Bad choice!', RED)
                     sys.exit(0)
