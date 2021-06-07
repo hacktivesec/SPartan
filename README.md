@@ -1,12 +1,14 @@
 SPartan
 =======
-by Keiran Dennie
+by Keiran Dennie (Author), Arkango (Mantainer)
+
+Note: This is a restyling and update of base SPartan developed by SensePost
 
 Requirements
 -------------
 The requests_ntlm and beautifulsoup4 libraries are required. Use the following command to install these with pip:
 
-pip install -r requirements.txt 
+python3 -m pip install -r requirements.txt 
 
 Overview
 -------
@@ -27,7 +29,7 @@ Usage
 
 Some information needed for SPartan Usage:
 
- python SPartan.py -u http://127.0.0.1 -f -c 
+ python3 SPartan.py -u http://127.0.0.1 -f -c 
  *Note: You need to add 'http(s)://' to the URL*
 
 * -u: host URL to scan including HTTP/HTTPS
