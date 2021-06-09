@@ -39,12 +39,12 @@ Some information needed for SPartan Usage:
 * -s: perform sharepoint scans
 * --sps: discover sharepoint SOAP services
 * --users: List users using Search Principals
-* -r: (COMING SOON)execute a specified Frontpage RPC query
+* -r: execute a Frontpage RPC query (e.g "get+document:6.0.n.nnnn&service_name=/&document_name=file_name&old_theme_html=false&force=true&get_option=none&doc_version=&timeout=0")
 * -t: set maximum amount of threads (10 default)
-* -p: (COMING SOON)find putable directories)
+* -p: find putable directories 
 * --cookie: "use a cookie for authenticated scans
 * -d: download pdf, doc, docx, txt, config, xml, xls, xlsx, webpart, config, conf, stp, csv and asp/aspx(uninterpreted)
-* -l: provide credentials for authentication to Sharepoint e.g., domain\user:password
+* -l: provide credentials for authentication to Sharepoint e.g., domain\\user:password
 * -v: Render verbose output. By default SPartan will only render found resources.
 * -i: Don't attempt to verify SSL
 

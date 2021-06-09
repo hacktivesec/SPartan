@@ -213,22 +213,27 @@ def frontpage_rpc(url):
 
 
 def query_rpc(url, query):
-    paths = ['_vti_bin/shtml.exe/_vti_rpc', '_vti_bin/shtml.dll/_vti_rpc']
+    paths = ['_vti_bin/shtml.exe/_vti_rpc', '_vti_bin/shtml.dll/_vti_rpc','_vti_bin/_vti_aut/author.dll']
     data = "method=" + query
     path = ''
     for path in paths:
         try:
-            resp = URLThread(url + '/' + path.strip("/"))
-            if resp.status_code == 200:
+            thread = URLThread(None)
+            thread.start()
+            thread.join()
+            thread.sendData(url + '/' + path, data)
+            resp = thread.resp
+            if resp is not None and resp.status_code == 200:
+                print(resp.text)
                 break
         except Exception:
             pass
-    try:
-        resp = URLThread(url + '/' + path.strip("/"))
-        if resp.status_code == 200:
-            print(resp.text)
-    except requests.HTTPError as e:
-        print(e)
+    #try:
+    #    resp = URLThread(url + '/' + path.strip("/"))
+    #    if resp.status_code == 200:
+    #        print(resp.text)
+    #except requests.HTTPError as e:
+    #    print(e)
 
 
 def frontpage_fileup(url):
@@ -350,6 +355,7 @@ def findPuttable():
     #Find directories which are puttable
     headers = {'user-agent': random.choice(agents).strip(),}
     paths = []
+    #print(foundURLs)
     try:
         for url in foundURLs:
                 urlPath = url.split('/')
@@ -358,12 +364,14 @@ def findPuttable():
                 newURL = '/'.join(urlPath)
                 if newURL not in paths:
                     paths.append(newURL)
+                
         for path in paths:
+            #print(path)
             resp = None
             if authed:
-                resp = requests.options(path, auth=HttpNtlmAuth(username, password),headers=headers)
+                resp = requests.options(path, auth=HttpNtlmAuth(username, password),headers=headers,proxies=PROXY)
             else:
-                resp = requests.options(path,headers=headers)
+                resp = requests.options(path,headers=headers,proxies=PROXY)
 
             if resp is not None and resp.status_code == 200:
                 if 'allow' in resp.headers:
@@ -384,11 +392,11 @@ def authenticate(url, userpass, cString):
         if userpass is not None:
             #use credentials
             domain = userpass.split("\\")[0]
-            print(domain)
+            #print(domain)
             username = domain + "\\" + userpass.split('\\')[1].split(':')[0]
-            print(username)
+            #print(username)
             password = userpass.split(':')[1]
-            print(password)
+            #print(password)
             print ('[+] Authenticating: %s %s' % (url, username))
             response = requests.get(url, auth=HttpNtlmAuth( username, password), verify=ignore_ssl,headers=headers,proxies=PROXY)
             if response.status_code == 200:
@@ -472,7 +480,9 @@ def keywordScanner(keyword):
         print(e)
 
 def fileNamer(url):
-    fileName = url.strip('https://').strip('http://')
+    #print(url)
+    fileName = url.replace('https://','').replace('http://','')
+    #print(fileName)
     fileName = fileName.replace(":","")
     fileName = fileName.replace("/","_")
     return fileName
@@ -518,9 +528,10 @@ def printer(text, colour):
 class URLThread(threading.Thread):
     #Responsible for processing all URLs
 
-    def __init__(self, urlName):
+    def __init__(self, urlName,data = None):
         threading.Thread.__init__(self)
         self.url = urlName
+        self.data = data
         self.resp = ''
         self.lock = Lock()
 
@@ -530,6 +541,7 @@ class URLThread(threading.Thread):
             #Only call this is no data was supplied
             if self.url is not None:
                 self.urlProcessor(self.url)
+            
         finally:
             threadLimiter.release()
 
@@ -561,13 +573,21 @@ class URLThread(threading.Thread):
                 if authed:
 
                     if cookie is not None:
-                        fakeResp = requests.get(fakeUrl, cookies=cookie, verify=ignore_ssl,headers=headers,proxies=PROXY)
+                        if self.data is None:
+                            fakeResp = requests.get(fakeUrl, cookies=cookie, verify=ignore_ssl,headers=headers,proxies=PROXY)
+                        else:
+                            fakeResp = requests.post(fakeUrl, cookies=cookie, verify=ignore_ssl,headers=headers,proxies=PROXY,data=self.data)
 
                     else:
-                        fakeResp = requests.get(fakeUrl, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers,proxies=PROXY)
+                        if self.data is None:
+                            fakeResp = requests.get(fakeUrl, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers,proxies=PROXY)
+                        else:
+                            fakeResp = requests.post(fakeUrl, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers,proxies=PROXY,data=self.data)
                 else:
-                    fakeResp = requests.get(fakeUrl, verify=ignore_ssl,headers=headers,proxies=PROXY)
-                
+                    if self.data is None:
+                        fakeResp = requests.get(fakeUrl, verify=ignore_ssl,headers=headers,proxies=PROXY)
+                    else:
+                        fakeResp = requests.post(fakeUrl, verify=ignore_ssl,headers=headers,proxies=PROXY,data=self.data)
                 fakeRespSize = len(fakeResp.text)
 
             except requests.HTTPError as e:
@@ -577,11 +597,20 @@ class URLThread(threading.Thread):
             #Do request with legit url
             if authed:
                 if cookie is not None:
-                    self.resp = requests.get(url, cookies=cookie, verify=ignore_ssl,headers=headers)
+                    if self.data is None:
+                        self.resp = requests.get(url, cookies=cookie, verify=ignore_ssl,headers=headers)
+                    else:
+                        self.resp = requests.post(url, cookies=cookie, verify=ignore_ssl,headers=headers,data=self.data)
                 else:
-                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers)
+                    if self.data is None:
+                        self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers)
+                    else:
+                        self.resp = requests.post(url, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers,data=self.data)
             else:
-                self.resp = requests.get(url, verify=ignore_ssl,headers=headers)
+                if self.data is None:
+                    self.resp = requests.get(url, verify=ignore_ssl,headers=headers)
+                else:
+                    self.resp = requests.post(url, verify=ignore_ssl,headers=headers,data=self.data)
 
             respSize = len(self.resp.text)
 
@@ -621,7 +650,8 @@ class URLThread(threading.Thread):
         except requests.HTTPError as e:
             print(e)
 
-    def sendData(self, url, data, headers):
+    def sendData(self, url, data = {}, headers = {}):
+        #print('send data')
         global counter
         try:
             if authed:
@@ -634,10 +664,10 @@ class URLThread(threading.Thread):
             respSize = len(self.resp.text)
 
             if self.resp is not None:
-                #if self.resp.status_code == 200:
-                 #   out = "[+] [%s][%s][%sb] - %s" % (counter, self.resp.status_code, respSize, url.strip())
-                  #  self.printer(out, GREEN)
-                   # foundURLs.append(url)
+                if self.resp.status_code == 200:
+                    out = "[+] [%s][%s][%sb] - %s" % (counter, self.resp.status_code, respSize, url.strip())
+                    self.printer(out, GREEN)
+                    foundURLs.append(url)
                 if self.resp.status_code == 400:
                     out = "[-] [%s][%s][%sb] - %s" % (counter, self.resp.status_code, respSize, url.strip())
                     self.printer(out, RED)
@@ -857,10 +887,10 @@ if __name__ == "__main__":
                 print("\n-----------------------------------------------------------------------------")
                 print ("[+] Initiating keyword scan...")
                 keywordScanner(stringCleaner(args.keyword))
-            # if args.rpc:
-            #     print("\n-----------------------------------------------------------------------------")
-            #     print "[+] Executing Frontpage RPC query..."
-            #     query_rpc(url, args.rpc)
+            if args.rpc:
+                 print("\n-----------------------------------------------------------------------------")
+                 print ("[+] Executing Frontpage RPC query...")
+                 query_rpc(url, args.rpc)
             if args.putable:
                 print("\n-----------------------------------------------------------------------------")
                 print ("[+] Searching for PUTable directories...")
