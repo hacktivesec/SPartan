@@ -47,9 +47,10 @@ dirs = []
 filename = ''
 authed = False
 ignore_ssl = False
+cookie = None
 
 PROXY = {
-    'http' : ''
+    'http' : 'http://127.0.0.1:8080'
 }
 
 # downloadFiles = False
@@ -75,6 +76,24 @@ agents = ['Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.1.3) Gecko/20090913 
 
 
 def getUsers(url):
+    path = '_layouts/15/people.aspx?MembershipGroupId=0'
+    userList = []
+
+    thread = URLThread(url + '/' + stringCleaner(path))
+    thread.start()
+    thread.join()
+
+    response = thread.resp
+    if response is not None:
+        soup = bs4.BeautifulSoup(response.text)
+        for inputTag in soup.find_all('input'):
+            accountElement = inputTag.get('account')
+            if accountElement is not None:
+                if 'i:0#.f|' in accountElement or 'i:0#.w|' in accountElement:
+                    print(accountElement.rsplit('|', 1)[1])
+                else:
+                    print(accountElement)
+    
     path = '_layouts/people.aspx?MembershipGroupId=0'
     userList = []
 
@@ -250,6 +269,7 @@ def sharepoint_layouts(url):
         layoutPaths = f.readlines()
     threads = []
     for path in layoutPaths:
+        #print(url + '/' + stringCleaner(path))
         thread = URLThread(url + '/' + stringCleaner(path))
         thread.start()
         threads.append(thread)
@@ -363,9 +383,12 @@ def authenticate(url, userpass, cString):
 
         if userpass is not None:
             #use credentials
-            domain = userpass.split('\\')[0]
-            username = domain + "\\" + userpass.split(':')[0]
+            domain = userpass.split("\\")[0]
+            print(domain)
+            username = domain + "\\" + userpass.split('\\')[1].split(':')[0]
+            print(username)
             password = userpass.split(':')[1]
+            print(password)
             print ('[+] Authenticating: %s %s' % (url, username))
             response = requests.get(url, auth=HttpNtlmAuth( username, password), verify=ignore_ssl,headers=headers,proxies=PROXY)
             if response.status_code == 200:
@@ -539,6 +562,7 @@ class URLThread(threading.Thread):
 
                     if cookie is not None:
                         fakeResp = requests.get(fakeUrl, cookies=cookie, verify=ignore_ssl,headers=headers,proxies=PROXY)
+
                     else:
                         fakeResp = requests.get(fakeUrl, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers,proxies=PROXY)
                 else:
@@ -739,7 +763,7 @@ if __name__ == "__main__":
             else:
                 downloadFiles = False
 
-            global cookie
+            
             if args.cookie:
                 cString = args.cookie
                 authenticate(args.url, None, cString)
