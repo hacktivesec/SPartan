@@ -23,6 +23,8 @@ Features:
 - Saves state from previous scans
 - Site crawling
 - Accepts NTLM creds and session cookies for authenticated scans
+- Frontpage upload file and folder delete tests
+- Frontpage rcp default methods tests
 
 Usage
 -----
@@ -44,7 +46,7 @@ Some information needed for SPartan Usage:
 * -p: find putable directories 
 * --cookie: use a cookie for authenticated scans
 * -d: download pdf, doc, docx, txt, config, xml, xls, xlsx, webpart, config, conf, stp, csv and asp/aspx(uninterpreted)
-* -l: provide credentials for authentication to Sharepoint e.g., domain\\user:password
+* -l: provide credentials for authentication to Sharepoint e.g., domain\\\\user:password
 * -v: Render verbose output. By default SPartan will only render found resources.
 * -i: Don't attempt to verify SSL
 

