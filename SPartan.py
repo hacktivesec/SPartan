@@ -50,7 +50,7 @@ ignore_ssl = False
 cookie = None
 
 PROXY = {
-    'http' : 'http://127.0.0.1:8080'
+    'http' : ''#'http://127.0.0.1:8080'
 }
 
 # downloadFiles = False
@@ -374,8 +374,10 @@ def findPuttable():
                 resp = requests.options(path,headers=headers,proxies=PROXY)
 
             if resp is not None and resp.status_code == 200:
+                #print(resp.headers)
                 if 'allow' in resp.headers:
-                    printer('[+] PUT - %s' % (path), GREEN)
+                    if 'PUT' in resp.headers['allow']:
+                        printer('[+] PUT - %s' % (path), GREEN)
 
     except Exception as e:
         print(e)
@@ -704,7 +706,7 @@ class URLThread(threading.Thread):
                 else:
                     self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), stream=True, verify=ignore_ssl,headers=headers,proxies=PROXY)
             else:
-                self.resp = requests.get(url, stream=True,headers=headers)
+                self.resp = requests.get(url, stream=True,headers=headers,verify=ignore_ssl)
 
             if 'asp' in extension or 'aspx' in extension:
                 if '<%' not in self.resp.text and '%>' not in self.resp.text:
@@ -821,10 +823,10 @@ if __name__ == "__main__":
                 ignore_ssl = True
             #print('here')
             url = args.url.strip('/')
-            print(url)
+            #print(url)
             fileName = fileNamer(url)
 
-            print(filename)
+            #print(filename)
 
             if not checkDirExists(fileName):
                 os.makedirs(fileName)
